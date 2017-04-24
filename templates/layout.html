@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Flood Simulation</title>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="crossorigin="anonymous"></script>
+	<style>
+		/* Always set the map height explicitly to define the size of the div
+		* element that contains the map. */
+		#map {
+			height: 100%;
+		}
+		/* Optional: Makes the sample page fill the window. */
+		html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
+		.loader {
+		    display:    none;
+		    position:   fixed;
+		    z-index:    1000;
+		    top:        0;
+		    left:       0;
+		    height:     100%;
+		    width:      100%;
+		    background: rgba( 255, 255, 255, .8 ) 
+		                url('http://i.stack.imgur.com/FhHRx.gif') 
+		                50% 50% 
+		                no-repeat;
+		}
+
+		/* When the body has the loading class, we turn
+		   the scrollbar off with overflow:hidden */
+		body.loading {
+		    overflow: hidden;   
+		}
+
+		/* Anytime the body has the loading class, our
+		   modal element will be visible */
+		body.loading .loader {
+		    display: block;
+		}
+    </style>
+</head>
+<body>
+	<div id="map"></div>
+
+	<div class="loader"><!-- Place at bottom of page --></div>
+
+    <script>
+    	var map;
+
+		function initMap() {
+			var firstLocation = { lat: -12.052918949360256, lng: -77.04763412475586 };
+
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: firstLocation,
+				zoom: 14
+			});
+
+			google.maps.event.addListener(map, 'click', function(event) {
+				placeMarker(event.latLng);
+				simulate(event.latLng);
+			});
+		}
+
+		function placeMarker(location) {
+			var marker = new google.maps.Marker({
+				position: location, 
+				map: map
+			});
+		}
+
+		function simulate(latLng) {
+			$.ajax( {
+				url: "/simulate",
+				method: "POST",
+				data: { lat: latLng.lat(), lng: latLng.lng() },
+				dataType: "json",
+				success: function(route) {
+					var points = [];
+					for(i in route) {
+					    points.push({ lat: route[i][0], lng: route[i][1] })
+					}
+
+					var routeLines = new google.maps.Polyline({
+						path: points,
+						geodesic: true,
+						strokeColor: '#FF0000',
+						strokeOpacity: 1.0,
+						strokeWeight: 2
+					});
+
+					routeLines.setMap(map);
+				}
+			});
+		}
+
+		$(document).on({
+			ajaxStart: function() { $("body").addClass("loading");    },
+			ajaxStop: function() { $("body").removeClass("loading"); }    
+		});
+
+		$(document).ready(function() {
+
+		});
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{key}}&callback=initMap" async defer></script>
+</body>
+</html>
